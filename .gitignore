@@ -1,0 +1,42 @@
+# ===== Java / Maven =====
+target/
+target.locked.*
+*.class
+*.jar
+*.war
+dependency-reduced-pom.xml
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.properties
+
+# ===== Node / 前端 =====
+node_modules/
+dist/
+dist-ssr/
+**/dist.old.*/
+.vite/
+coverage/
+*.tsbuildinfo
+
+# vite 加载配置时生成的中间产物
+vite.config.js
+vite.config.d.ts
+
+# ===== 日志 =====
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ===== IDE / OS =====
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+
+# ===== 本地配置与凭据 =====
+# 本地启动脚本里写死了公众号 appsecret，只在本机使用
+tools/local/
+.env
+.env.local
+*.local

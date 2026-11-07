@@ -1,0 +1,101 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: notifyhub
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:notifyhub}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:123456}
+    hikari:
+      maximum-pool-size: 10
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 3000ms
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    # 必须用 Slf4jImpl，不能用 StdOutImpl。
+    # StdOutImpl 把 SQL 直接写进标准输出，绕过日志框架，logging.level 压不住：
+    # 补偿任务每 5 秒扫一次库，就是每 5 秒刷一屏 SELECT，把真正的异常淹掉。
+    # 换成 Slf4jImpl 后 SQL 走 DEBUG 级别，由下面 logging.level 统一控制。
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+notify:
+  # 前端控制台地址。前后端分离后前端是独立工程（frontend/，Vite dev server 在 5174），
+  # 后端不再托管页面，只把误访问根路径的请求重定向过去
+  console-url: ${NOTIFY_CONSOLE_URL:http://localhost:5174}
+
+  # 允许跨域的前端来源，多个用逗号分隔。
+  # 开发走 Vite proxy 时用不到；部署到 nginx / CDN 后浏览器直连后端才需要
+  cors:
+    allowed-origins: ${NOTIFY_CORS_ORIGINS:http://localhost:5174}
+
+  # 投递补偿任务：服务启动即开始扫描未达终态的消息
+  worker:
+    enabled: ${NOTIFY_WORKER_ENABLED:true}
+    # 单次扫描上限，避免一次拉起过多消息把通道打爆
+    batch-size: ${NOTIFY_BATCH_SIZE:20}
+    # 扫描间隔
+    scan-interval-ms: ${NOTIFY_SCAN_INTERVAL_MS:5000}
+    # 批内并发投递数。单条投递绝大部分时间在等网关返回，
+    # 串行时吞吐 = batch / (单条耗时 × batch + 间隔)，线程全在阻塞
+    concurrency: ${NOTIFY_CONCURRENCY:8}
+
+  # 短信通道（当前为 mock 实现，用于本地联调与压测）
+  channel:
+    sms:
+      # 模拟网关往返耗时。真实短信 100~300ms，压测时可调大观察吞吐变化
+      latency-ms: ${NOTIFY_SMS_LATENCY_MS:20}
+      # 0 = 全部成功；1.0 = 必然失败，用于验证重试退避与死信链路
+      fail-rate: ${NOTIFY_SMS_FAIL_RATE:0.0}
+
+  # 重试策略
+  retry:
+    max-retry: ${NOTIFY_MAX_RETRY:3}
+    # 指数退避基数：第 n 次失败后等待 base * 2^(n-1) 秒
+    backoff-base-seconds: ${NOTIFY_BACKOFF_BASE:10}
+    # 退避上限，防止指数增长到不可用
+    backoff-max-seconds: ${NOTIFY_BACKOFF_MAX:300}
+
+  # 微信通道。留空即进入 mock 模式（不真调微信接口，但链路照常跑通）
+  wechat:
+    # 公众号模板消息：三个都配上才会真实调用
+    mp:
+      app-id: ${WECHAT_MP_APP_ID:}
+      app-secret: ${WECHAT_MP_APP_SECRET:}
+      template-id: ${WECHAT_MP_TEMPLATE_ID:}
+    # 企业微信群机器人：配了 webhook 就能真的发到群里
+    work:
+      webhook-url: ${WECHAT_WORK_WEBHOOK:}
+
+  # 限流：防短信轰炸与通道被打爆
+  # 用固定窗口计数而非令牌桶——通知要控制的是「总量」（每分钟最多 N 条），不是「速率」
+  ratelimit:
+    enabled: ${NOTIFY_RATELIMIT_ENABLED:true}
+    # 单个接收方（手机号/openid）在窗口内的上限
+    receiver-limit: ${NOTIFY_RATE_RECEIVER:5}
+    # 单个通道在窗口内的上限（短信有成本，站内信免费，实际部署应按通道分别配置）
+    channel-limit: ${NOTIFY_RATE_CHANNEL:100}
+    window-seconds: ${NOTIFY_RATE_WINDOW:60}
+
+logging:
+  level:
+    root: info
+    # 业务日志保持 info：投递成功、重试、死信这些是要看的
+    com.notifyhub: ${NOTIFY_LOG_LEVEL:info}
+    # SQL 日志的 logger 是 Mapper 接口全限定名（com.notifyhub.mapper.XxxMapper），
+    # 默认 info 即可静音；排查 SQL 时用 MAPPER_LOG_LEVEL=debug 打开
+    com.notifyhub.mapper: ${MAPPER_LOG_LEVEL:info}
