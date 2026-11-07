@@ -403,7 +403,7 @@ flowchart TB
 
 ## 几个关键决策
 
-这里只列最容易被追问的几个决策：
+完整的设计取舍见 [docs/DESIGN.md](docs/DESIGN.md)，表结构与索引见 [docs/DATABASE.md](docs/DATABASE.md)，这里只列最容易被追问的几个决策：
 
 | 决策 | 理由 |
 |---|---|
@@ -441,12 +441,15 @@ notifyhub/
 │   │   ├── controller/         REST 接口（messages / recipients / accounts）
 │   │   ├── service/            MessageService · ChannelAccountService · RecipientService · ...
 │   │   ├── worker/             DeliveryWorker 定时补偿
-│   │   ├── mapper/             四张表的 Mapper（含条件抢占与到期扫描 SQL）
+│   │   ├── mapper/             五张表的 Mapper（含条件抢占与到期扫描 SQL）
 │   │   └── model/              实体 / DTO / VO（ChannelAccountVO 脱敏）
 │   ├── src/main/resources/application.yml
 │   ├── sql/                    schema.sql · seed.sql · migration-001-channel-account.sql
 │   ├── tools/                  压测与回归脚本 · fake_webhook.py
 │   │   └── local/             本地启动脚本（含凭据，gitignore 排除）
+│   └── docs/                   设计文档
+│       ├── DESIGN.md           架构图与全部取舍
+│       └── DATABASE.md         表结构、索引与状态机
 └── frontend/               前端工程（Vue3 + TypeScript + Vite）
     ├── src/api/            接口封装（axios 拦截器统一解包业务 code）
     ├── src/components/     SendForm · RecipientManager · AccountManager · 两个表单弹窗 · ...
