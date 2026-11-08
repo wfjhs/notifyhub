@@ -305,7 +305,7 @@ python tools/fake_webhook.py            # 监听 9000
 6. 带凭据启动：
    ```bash
    java -jar target/notifyhub-1.0.0.jar \
-     --notify.wechat.mp.app-id=wx1234567890abcdef \
+     --notify.wechat.mp.app-id=你的AppID \
      --notify.wechat.mp.app-secret=你的secret \
      --notify.wechat.mp.template-id=你的模板ID
    ```
