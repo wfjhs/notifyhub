@@ -1,5 +1,7 @@
 # NotifyHub · 通知中台
 
+[![CI](https://github.com/WFJHS/notifyhub/actions/workflows/ci.yml/badge.svg)](https://github.com/WFJHS/notifyhub/actions/workflows/ci.yml)
+
 一个统一的消息投递服务：业务方调一次接口，它负责把消息**可靠地**送到短信、站内信、企业微信、公众号。
 
 核心不是"能发出去"，而是**发失败之后怎么办**——重试多少次、隔多久重试、彻底失败后怎么兜底、人工修复后怎么补发。
